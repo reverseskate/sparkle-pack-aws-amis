@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'sparkle-pack-aws-amis'
-  s.version = '0.1.0'
+  s.version = '0.1.1'
   s.licenses = ['MIT']
   s.summary = 'AWS AMI SparklePack'
   s.description = 'SparklePack to provide mappings for Official Amazon and Ubuntu AMIs by region'
