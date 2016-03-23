@@ -2,7 +2,7 @@
 SparklePack for Offical Ubuntu and Amazon Linux AWS AMIs
 
 ## Use Cases
-This SparklePack provides mappings for official Ubuntu LTS and Amazon Linux AMIs in all regions. It is useful for scenarios when you need cross-region and/or cross-platform compatibility, and do not want to maintain a list of AMIs in your codebase. Pinning to an exact gem version will ensure that you always get the same AMI.
+This SparklePack provides mappings for official Ubuntu LTS and Amazon Linux AMIs in all regions. It is useful for scenarios where you need cross-region and/or cross-platform compatibility, and do not want to maintain a list of AMIs in your codebase. Pinning to an exact gem version will ensure that you always get the same AMI.
 
 Instance type and virtualization can be tuned via optional config arguments, and the set of available operating systems can also be trimmed according to preference.
 
