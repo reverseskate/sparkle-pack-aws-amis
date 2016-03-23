@@ -2,7 +2,7 @@ SfnRegistry.register(:official_amis) do |_name, _config = {}|
 
   type = _config.fetch(:type, 'instance_store').to_sym
   virt = _config.fetch(:virt, 'hvm').to_sym
-  os_versions = _config.fetch(:os_versions, ['ubuntu_14', 'ubuntu_12', 'amazon_2015_09'])
+  os_versions = _config.fetch(:os_versions, ['trusty', 'ubuntu_12', 'amazon_2015_09'])
 
   ami_hash = {}
 
