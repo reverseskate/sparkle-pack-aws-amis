@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 require 'net/http'
 require 'json'
+require 'pp'
 
 raw_data = Net::HTTP.get('cloud-images.ubuntu.com','/locator/ec2/releasesTable')
 
@@ -49,9 +50,9 @@ trusty_hash = {
 }
 
 File.open('lib/sparkleformation/registry/precise.rb', 'w') do |file|
-  file.write("SfnRegistry.register(:precise_amis) do\n#{precise_hash}\nend")
+  file.write("SfnRegistry.register(:precise_amis) do\n#{precise_hash.pretty_inspect}\nend")
 end
 
 File.open('lib/sparkleformation/registry/trusty.rb', 'w') do |file|
-  file.write("SfnRegistry.register(:trusty_amis) do\n#{trusty_hash}\nend")
+  file.write("SfnRegistry.register(:trusty_amis) do\n#{trusty_hash.pretty_inspect}\nend")
 end
