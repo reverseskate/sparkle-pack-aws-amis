@@ -3,56 +3,38 @@ require 'net/http'
 require 'json'
 require 'pp'
 
-raw_data = Net::HTTP.get('cloud-images.ubuntu.com','/locator/ec2/releasesTable')
+raw_data = JSON.parse(Net::HTTP.get('cloud-images.ubuntu.com','/releases/streams/v1/com.ubuntu.cloud:released:aws.json'))
 
-ami_array = JSON.parse(raw_data.gsub("\n", '').gsub(',]',']')).first[1]
 
-indices = {}
-ami_array.each do |row|
-  if row.include?('us-east-1') && row.include?('hvm:instance-store') && row.include?('amd64') && row.include?('trusty')
-    indices = {
-      :region => row.index('us-east-1'),
-      :type => row.index('hvm:instance-store'),
-      :platform => row.index('amd64'),
-      :version => row.index('trusty'),
-      :virt => row.index('hvm'),
-      :ami => row.index { |a| a =~ /.*ami.*/ }
-    }
-  end
-end
-
-ami_array.keep_if do |row|
-  row[indices[:version]] == "trusty" || row[indices[:version]] == "precise"
-end
+amis = raw_data['products']
 
 ami_hash = {}
 
-ami_array.each do |a|
-  version = a[indices[:version]]
-  ami_hash[version] = {} unless ami_hash[version].is_a?(Hash)
-  region = a[indices[:region]]
-  ami_hash[version][region] = {} unless ami_hash[version][region].is_a?(Hash)
-  virt = a[indices[:virt]] == 'hvm' ? 'hvm' : 'pv'
-  ami_hash[version][region][virt.to_sym] = {} unless ami_hash[version][region][virt.to_sym].is_a?(Hash)
-  type = a[indices[:type]].tr('hvm:','').tr('-','_').to_sym
-  ami = a[indices[:ami]].match('(?<=\>)(.*)(?=<)')
-  ami_hash[version][region][virt.to_sym][type] = ami.to_s
+stable = amis.select { |k,v| v['release_title'].include?("LTS") }
+
+stable.each do |product,versions|
+  ami_hash[versions['release']] = {}
+  versions['versions'].each do |date,items|
+    ami_hash[versions['release']][date] = { 'amis' => {} } unless ami_hash[versions['release']][date].is_a?(Hash)
+    items['items'].each do |item, info|
+      ami_hash[versions['release']][date]['amis'][info['crsn']] = {} unless ami_hash[versions['release']][date]['amis'][info['crsn']].is_a?(Hash)
+      ami_hash[versions['release']][date]['amis'][info['crsn']][info['virt']] = {} unless ami_hash[versions['release']][date]['amis'][info['crsn']][info['virt']].is_a?(Hash)
+          ami_hash[versions['release']][date]['amis'][info['crsn']][info['virt']][info['root_store']] = info['id']
+    end
+  end
 end
 
-precise_hash = {
-  :version => 'precise',
-  :amis => ami_hash['precise']
-}
+ami_hash.keys.each do |key|
 
-trusty_hash = {
-  :version => 'trusty',
-  :amis => ami_hash['trusty']
-}
+  release_dates = ami_hash[key].keys.map{ |k| k.split('.').first }
 
-File.open('lib/sparkleformation/registry/precise.rb', 'w') do |file|
-  file.write("SfnRegistry.register(:precise_amis) do\n#{precise_hash.pretty_inspect}\nend")
-end
+  hash = {
+    :latest => release_dates.max,
+    :version => key,
+    :releases => ami_hash[key]
+  }
 
-File.open('lib/sparkleformation/registry/trusty.rb', 'w') do |file|
-  file.write("SfnRegistry.register(:trusty_amis) do\n#{trusty_hash.pretty_inspect}\nend")
+  File.open("lib/sparkleformation/registry/#{key}.rb", 'w') do |file|
+    file.write("SfnRegistry.register(:#{key}_amis) do\n#{hash.pretty_inspect}\nend")
+  end
 end
