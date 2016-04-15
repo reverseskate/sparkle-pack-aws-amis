@@ -26,12 +26,10 @@ end
 
 ami_hash.keys.each do |key|
 
-  release_dates = ami_hash[key].keys.map{ |k| k.split('.').first }
-
   hash = {
-    :latest => release_dates.max,
-    :version => key,
-    :releases => ami_hash[key]
+    'latest' => ami_hash[key].keys.max,
+    'version' => key,
+    'releases' => ami_hash[key]
   }
 
   File.open("lib/sparkleformation/registry/#{key}.rb", 'w') do |file|

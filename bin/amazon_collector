@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+
+require 'aws-sdk-core'
+require 'json'
+require 'pp'
+
+ec2 = ::Aws::EC2::Client.new
+
+amis = {
+  'releases' => {},
+  'version' => 'amazon'
+}
+
+regions = ec2.describe_regions.regions.map(&:region_name)
+
+regions.each do |r|
+  ec2 = ::Aws::EC2::Client.new(:region => r)
+  ec2.describe_images(owners: ['amazon'], filters:[{name:'name', values:['amzn-ami*']}, {name:'architecture',values:['x86_64']}]).images.delete_if { |image| image.name.include?('rc') || image.name.include?('beta') }.each do |image|
+    info = image.name.split('-')
+    date = info.select { |k| k.include?('x86_64')}[0].gsub('.x86_64','')
+    amis['releases'][date] = { 'amis' => {} } unless amis['releases'][date].is_a?(Hash)
+    amis['releases'][date]['amis'][r] = {} unless amis['releases'][date][r].is_a?(Hash)
+    if info.include?('ebs')
+      if info.include?('hvm')
+        virt = 'hvm'
+        root_store = 'ssd'
+      else
+        virt = 'pv'
+        root_store = 'ebs'
+      end
+    else
+      root_store = 'instance'
+      if info.include?('hvm')
+        virt = 'hvm'
+      else
+        virt = 'pv'
+      end
+    end
+    amis['releases'][date]['amis'][r][virt] = {} unless amis['releases'][date]['amis'][r][virt].is_a?(Hash)
+    amis['releases'][date]['amis'][r][virt][root_store] = image.image_id
+  end
+end
+
+amis['latest'] = amis['releases'].keys.max
+
+File.open("lib/sparkleformation/registry/amazon.rb", 'w') do |file|
+  file.write("SfnRegistry.register(:amazon_amis) do\n#{amis.pretty_inspect}\nend")
+end
