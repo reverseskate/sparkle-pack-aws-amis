@@ -30,7 +30,7 @@ end
 
 In a SparkleFormation Template/Component/Dynamic:
 ```ruby
-registry!(:offical_amis, :name)
+registry!(:official_amis, :name)
 
 resources do
   ec2_instance do
