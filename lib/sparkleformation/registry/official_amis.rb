@@ -13,7 +13,7 @@ SfnRegistry.register(:official_amis) do |_name, _config = {}|
   ami_hash.each do |release, info|
     info[:amis].each do |region, ids|
       mappings do
-        official_amis do
+        set!(_name ? "#{_name}_official_amis" : "official_amis") do
           camel_keys_set!(:auto_disable)
           set!(region) do
             set!(info[:version], ids[virt][type])
